@@ -11,18 +11,18 @@ import org.skyscreamer.jsonassert.comparator.JSONComparator;
 public class JsonComparer {
 
     private String[] ignoredAttributes;
-    private String originalJson;
-    private String toCompare;
+    private String expectedJson;
+    private String actualJson;
     private JSONCompareMode compareMode = JSONCompareMode.NON_EXTENSIBLE;
 
-    private JsonComparer(String originalJson, String toCompare) {
-        this.originalJson = originalJson;
-        this.toCompare = toCompare;
+    private JsonComparer(String expectedJson, String actualJson) {
+        this.expectedJson = expectedJson;
+        this.actualJson = actualJson;
         ignoredAttributes = new String[]{};
     }
 
-    public static JsonComparer compare(String originalJson, String toCompare) {
-        return new JsonComparer(originalJson, toCompare);
+    public static JsonComparer compare(String expectedJson, String actualJson) {
+        return new JsonComparer(expectedJson, actualJson);
     }
 
     /**
@@ -47,7 +47,7 @@ public class JsonComparer {
         removeIgnoredAttributes();
         JSONComparator comparator = new DefaultComparator(compareMode);
         try {
-            return JSONCompare.compareJSON(originalJson, toCompare, comparator);
+            return JSONCompare.compareJSON(expectedJson, actualJson, comparator);
         } catch (JSONException ex) {
             throw new RuntimeException(ex);
         }
@@ -56,7 +56,7 @@ public class JsonComparer {
     public void assertJsonEquals() {
         removeIgnoredAttributes();
         try {
-            JSONAssert.assertEquals(originalJson, toCompare, compareMode);
+            JSONAssert.assertEquals(expectedJson, actualJson, compareMode);
         } catch (JSONException ex) {
             throw new RuntimeException(ex);
         }
@@ -64,8 +64,8 @@ public class JsonComparer {
 
     private void removeIgnoredAttributes() {
         for (String attribute : ignoredAttributes) {
-            originalJson = JsonUtils.removeAttribute(originalJson, attribute);
-            toCompare = JsonUtils.removeAttribute(toCompare, attribute);
+            expectedJson = JsonUtils.removeAttribute(expectedJson, attribute);
+            actualJson = JsonUtils.removeAttribute(actualJson, attribute);
         }
     }
 
