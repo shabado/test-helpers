@@ -10,7 +10,7 @@ public class JsonPayloadBuilder extends PayloadBuilder<JsonPayloadBuilder> {
         super(payload);
     }
 
-    private static JsonPayloadBuilder withBasePayload(String basePayload) {
+    public static JsonPayloadBuilder withBasePayload(String basePayload) {
         try {
             new Gson().fromJson(basePayload, JsonObject.class);
         } catch (JsonSyntaxException ex) {

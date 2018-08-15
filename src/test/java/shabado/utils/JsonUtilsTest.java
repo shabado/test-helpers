@@ -6,8 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonUtilsTest {
 
@@ -70,10 +69,133 @@ public class JsonUtilsTest {
     }
 
     @Test
+    public void should_get_array_value() {
+        String initial = "{\"id\":1,\"path\":[\"stringValue\"]}";
+        String expected = "stringValue";
+
+        String value = JsonUtils.getAttributeValue(initial, "path[0]");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_set_array_value_when_adding_array() {
+        String initial = "{\"id\":1}";
+        String expected = "{\"id\":1,\"path\":[\"newString\"]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[0]", "newString");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_set_when_adding_to_array() {
+        String initial = "{\"id\":1,\"path\":[\"oldString\"]}";
+        String expected = "{\"id\":1,\"path\":[\"oldString\",\"newString\"]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[1]", "newString");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_set_array_value_overwriting() {
+        String initial = "{\"id\":1,\"path\":[\"oldString\"]}";
+        String expected = "{\"id\":1,\"path\":[\"newString\"]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[0]", "newString");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_set_item_in_middle_of_array() {
+        String initial = "{\"id\":1,\"path\":[\"valueOne\",\"valueTwo\",\"valueThree\"]}";
+        String expected = "{\"id\":1,\"path\":[\"valueOne\",\"newString\",\"valueThree\"]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[1]", "newString");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_throw_attempt_to_set_would_cause_missing_index() {
+        String initial = "{\"id\":1,\"path\":[\"oldString\"]}";
+
+        String error = assertThrows(RuntimeException.class,
+                () -> JsonUtils.setAttribute(initial, "path[3]", "newString")).getMessage();
+
+        String expectedError = "Cannot add element at index 3 when array size is 1";
+        assertEquals(expectedError, error);
+    }
+
+    @Test
+    public void should_overwrite_nested_property_in_array() {
+        String initial = "{\"id\":1,\"path\":[{\"someValue\":\"oldString\"}]}";
+        String expected = "{\"id\":1,\"path\":[{\"someValue\":\"newString\"}]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[0].someValue", "newString");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_set_nested_property_in_array() {
+        String initial = "{\"id\":1}";
+        String expected = "{\"id\":1,\"path\":[{\"prop\":\"newString\"}]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[0]", "{\"prop\":\"newString\"}");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_get_nested_property_in_array() {
+        String json = "{\"id\":1,\"path\":[{\"prop\":\"newString\"}]}";
+        String value = JsonUtils.getAttributeValue(json, "path[0].prop");
+
+        assertEquals("newString", value);
+    }
+
+    @Test
+    public void should_add_to_array_with_nested_value() {
+        String initial = "{\"id\":1,\"path\":[{\"someValue\":\"oldString\"}]}";
+        String expected = "{\"id\":1,\"path\":[{\"someValue\":\"oldString\"},{\"someProp\":\"newString\"}]}";
+
+        String value = JsonUtils.setAttribute(initial, "path[1].someProp", "newString");
+
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void should_throw_if_adding_to_nested_with_missing_index() {
+        String initial = "{\"id\":1,\"path\":[{\"someValue\":\"oldString\"}]}";
+
+        String error = assertThrows(RuntimeException.class,
+                () -> JsonUtils.setAttribute(initial, "path[2].someProp", "newString")).getMessage();
+
+        String expectedError = "Cannot add element at index 2 when array size is 1";
+        assertEquals(expectedError, error);
+    }
+
+    @Test
     public void should_return_null_for_empty_attibute() {
         String initial = "{\"id\":1, \"path\":{\"name\":\"John\"}}";
 
         assertNull(JsonUtils.getAttributeValue(initial,"not.on.path"));
+    }
+
+    @Test
+    public void should_set_attribute_to_null() throws Throwable {
+        String initial = "{\"id\":1, \"name\":\"John\"}";
+        String expected = "{\"id\":1, \"name\":null}";
+
+        String nullValue = null;
+
+        String actual = JsonUtils.setAttribute(initial, "name", nullValue);
+
+        JSONAssert.assertEquals(expected, actual, JSONCompareMode.NON_EXTENSIBLE);
+
     }
 
     @Test

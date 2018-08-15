@@ -1,12 +1,13 @@
 package shabado.utils;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.common.base.CharMatcher;
+import com.google.gson.*;
 import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JsonUtils {
 
@@ -42,8 +43,32 @@ public class JsonUtils {
 
         updateContext(json, "$." + path, context);
 
-        context.set(path, value);
-        return context.jsonString();
+        if (isArray(path)) {
+            addValueToArrayAtPath(path, value, context);
+        } else {
+            context.set(path, value);
+        }
+        //Uses json().toString() rather than jsonString() to retain nulls.
+        return context.json().toString();
+    }
+
+    private static void addValueToArrayAtPath(String path, JsonElement value, DocumentContext context) {
+        String propertySubstring = path.substring(0, path.lastIndexOf('['));
+        JsonArray array = context.read(propertySubstring);
+
+        String arraySubstring = path.substring(path.lastIndexOf('['));
+        String indexString = CharMatcher.anyOf("[]").trimFrom(arraySubstring);
+        int index = Integer.parseInt(indexString);
+
+        if (array.size() == 0 && index == 0 || array.size() == index) {
+            array.add(value);
+            context.set(propertySubstring, array);
+        } else if (array.size() >= index) {
+            context.set(path, value);
+        } else {
+            throw new RuntimeException("Cannot add element at index " + index +
+                    " when array size is " + array.size());
+        }
     }
 
     private static DocumentContext updateContext(String json, String originalPath, DocumentContext context) {
@@ -52,9 +77,41 @@ public class JsonUtils {
             String subPath = originalPath.substring(0, originalPath.lastIndexOf("."));
             String property = originalPath.substring(originalPath.lastIndexOf(".") + 1);
             updateContext(json, subPath, context);
-            context.put(subPath, property, new JsonObject());
+            if (isArray(originalPath)) {
+                updateContextArray(context, subPath, originalPath, property);
+            } else {
+                context.put(subPath, property, new JsonObject());
+            }
         }
         return context;
+    }
+
+    private static void updateContextArray(DocumentContext context, String subPath,
+                                           String originalPath, String property) {
+        String arraySubstring = property.substring(property.lastIndexOf('['));
+        String indexString = CharMatcher.anyOf("[]").trimFrom(arraySubstring);
+        int index = Integer.parseInt(indexString);
+
+        if (index == 0) {
+            String propertySubstring = property.substring(0, property.lastIndexOf('['));
+            context.put(subPath, propertySubstring, new JsonArray());
+        } else {
+            addValueToArrayAtPath(originalPath, new JsonObject(), context);
+        }
+    }
+
+    private static boolean isArray(String property) {
+        int index = property.lastIndexOf('[');
+        if (index > -1) {
+            String arraySubstring = property.substring(index);
+
+            String patternString = "^[0-9\\[\\]]*$";
+
+            Pattern pattern = Pattern.compile(patternString);
+            Matcher matcher = pattern.matcher(arraySubstring);
+            return matcher.matches();
+        }
+        return false;
     }
 
     /**

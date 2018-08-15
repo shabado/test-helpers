@@ -1,9 +1,9 @@
 package shabado.payload;
 
+import shabado.utils.JsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import shabado.utils.JsonUtils;
 
 public abstract class PayloadBuilder<T extends PayloadBuilder<T>> {
 

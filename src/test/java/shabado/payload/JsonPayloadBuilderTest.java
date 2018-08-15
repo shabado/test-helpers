@@ -3,28 +3,23 @@ package shabado.payload;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
-import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class FilePayloadBuilderTest {
+public class JsonPayloadBuilderTest {
 
-    private static final String filePath = "payloadfile.json";
+    private static final String testPayload = "{\"name\":\"John\",\"id\":1, \"nestedObj\":{\"nestedAttribute\":123}}";
 
     @Test
-    public void should_create_payload_from_file() throws Throwable {
-        String expected = "{\"name\":\"John\",\"id\":1, \"nestedObj\":{\"nestedAttribute\":123}}";
-
-        String actual = FilePayloadBuilder.withBasePayloadPath(filePath).buildAsString();
-
-        JSONAssert.assertEquals(expected, actual, JSONCompareMode.LENIENT);
+    public void should_set_base_payload(){
+        String payload = JsonPayloadBuilder.withBasePayload(testPayload).buildAsString();
+        assertEquals(testPayload, payload);
     }
 
     @Test
     public void should_replace_value() {
-        String payload = FilePayloadBuilder.withBasePayloadPath(filePath)
+        String payload = JsonPayloadBuilder.withBasePayload(testPayload)
                 .withAttribute("nestedObj.nestedAttribute", "newValue").buildAsString();
 
         String expected = "{\"name\":\"John\",\"id\":1,\"nestedObj\":{\"nestedAttribute\":\"newValue\"}}";
@@ -34,7 +29,7 @@ public class FilePayloadBuilderTest {
 
     @Test
     public void should_add_string_value() {
-        String payload = FilePayloadBuilder.withBasePayloadPath(filePath)
+        String payload = JsonPayloadBuilder.withBasePayload(testPayload)
                 .withAttribute("newObject.newProperty", "newValue").buildAsString();
 
         String expected = "{\"name\":\"John\",\"id\":1,\"nestedObj\":{\"nestedAttribute\":123}," +
@@ -48,7 +43,7 @@ public class FilePayloadBuilderTest {
         JsonObject jsonObject = new Gson()
                 .fromJson("{\"newProperty\":\"newValue\"}", JsonObject.class);
 
-        String payload = FilePayloadBuilder.withBasePayloadPath(filePath)
+        String payload = JsonPayloadBuilder.withBasePayload(testPayload)
                 .withAttribute("newObject", jsonObject).buildAsString();
 
         String expected = "{\"name\":\"John\",\"id\":1,\"nestedObj\":{\"nestedAttribute\":123}," +
@@ -59,8 +54,8 @@ public class FilePayloadBuilderTest {
 
     @Test
     public void should_remove_attribute() {
-        String payload = FilePayloadBuilder
-                .withBasePayloadPath(filePath).withoutAttribute("nestedObj.nestedAttribute").buildAsString();
+        String payload = JsonPayloadBuilder
+                .withBasePayload(testPayload).withoutAttribute("nestedObj.nestedAttribute").buildAsString();
 
         String expected = "{\"name\":\"John\",\"id\":1,\"nestedObj\":{}}";
         assertEquals(expected, payload);
@@ -68,12 +63,10 @@ public class FilePayloadBuilderTest {
 
     @Test
     public void should_return_as_JsonElement() {
-        String expectedJson = "{\"name\":\"John\",\"id\":1, \"nestedObj\":{\"nestedAttribute\":123}}";
-
-        JsonObject actualObject = FilePayloadBuilder.withBasePayloadPath(filePath)
+        JsonObject actualObject = JsonPayloadBuilder.withBasePayload(testPayload)
                 .buildAsJsonObject();
 
-        JsonObject expectedObject = new Gson().fromJson(expectedJson, JsonObject.class);
+        JsonObject expectedObject = new Gson().fromJson(testPayload, JsonObject.class);
 
         assertEquals(expectedObject, actualObject);
     }
@@ -81,25 +74,17 @@ public class FilePayloadBuilderTest {
     @Test
     public void should_return_as_given_object() {
         TestObj expectedObj = new TestObj("testString", 123);
+        String testObjAsString = "{\"testString\":\"testString\", \"testInt\":123}";
 
-        TestObj actualObj = FilePayloadBuilder
-                .withBasePayloadPath("testObj.json").buildAsObject(TestObj.class);
+        TestObj actualObj = JsonPayloadBuilder.withBasePayload(testObjAsString).buildAsObject(TestObj.class);
 
         assertEquals(expectedObj, actualObj);
     }
 
     @Test
-    public void should_throw_if_file_not_found() {
-        RuntimeException error = assertThrows(RuntimeException.class,
-                () -> FilePayloadBuilder.withBasePayloadPath("noFile").buildAsString());
-
-        assertEquals("Unable to read file from given path", error.getMessage());
-    }
-
-    @Test
     public void should_throw_if_invalid_json() {
         RuntimeException error = assertThrows(RuntimeException.class,
-                () -> FilePayloadBuilder.withBasePayloadPath("notJsonFile.json").buildAsString());
+                () -> JsonPayloadBuilder.withBasePayload("notJson").buildAsString());
 
         assertEquals("Supplied String is not valid Json", error.getMessage());
     }

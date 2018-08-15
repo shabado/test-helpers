@@ -1,0 +1,7 @@
+{
+  "name":"John",
+  "id":1,
+  "nestedObj":{
+    "nestedAttribute":123
+  }
+}

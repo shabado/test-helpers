@@ -8,5 +8,3 @@ JSONPath).
 Payload builders aids in creating common Json payloads from Strings or files, using a builder pattern.
 
 JsonComparer builds upon Skyscreamer JSONAssert to aid in the comparison of Json objects.
-
-AWS (NYI) wrapper around AWS SDK to aid in asserting items are in S3 (initially).
